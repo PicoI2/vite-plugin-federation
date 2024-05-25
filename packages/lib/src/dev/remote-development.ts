@@ -214,6 +214,26 @@ export {__federation_method_ensure, __federation_method_getRemote , __federation
         return
       }
 
+      if (builderInfo.isRemote) {
+        if (
+          parsedOptions.devShared.some(
+            (sharedInfo) => 'react' == sharedInfo[0]
+          ) &&
+          code.includes('// ../node_modules/react/index.js') &&
+          code.includes('module.exports = require_react_development();')
+        ) {
+          //   console.log('Fix import of react in ', id);
+          code = code.replace(
+            '// ../node_modules/react/index.js',
+            "import React from 'react'; // fix react import in dev mode"
+          )
+          code = code.replace(
+            'module.exports = require_react_development();',
+            'module.exports = React; // fix react import in dev mode'
+          )
+        }
+      }
+
       let ast: AcornNode | null = null
       try {
         ast = this.parse(code)
