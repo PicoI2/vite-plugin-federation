@@ -82,6 +82,16 @@ declare interface VitePluginFederationOptions {
    * Current operating mode
    */
   mode?: string
+
+  /**
+   * Make federated types
+   */
+  makeFederatedTypes?: boolean
+
+  /**
+   * Download federated types
+   */
+  downloadFederatedTypes?: boolean
 }
 
 type Exposes = (string | ExposesObject)[] | ExposesObject

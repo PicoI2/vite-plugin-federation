@@ -30,6 +30,7 @@ export const builderInfo = {
   builder: 'rollup',
   version: '',
   assetsDir: '',
+  outDir: '',
   isHost: false,
   isRemote: false,
   isShared: false

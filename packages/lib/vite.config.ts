@@ -10,7 +10,14 @@ export default defineConfig({
     target: 'node14',
     minify: false,
     rollupOptions: {
-      external: ['fs', 'path', 'crypto', 'magic-string'],
+      external: [
+        'fs',
+        'path',
+        'crypto',
+        'magic-string',
+        'download',
+        'child_process'
+      ],
       output: {
         minifyInternalExports: false
       }

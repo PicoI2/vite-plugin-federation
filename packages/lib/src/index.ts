@@ -29,6 +29,7 @@ import type { PluginHooks } from '../types/pluginHooks'
 import type { ModuleInfo } from 'rollup'
 import { prodSharedPlugin } from './prod/shared-production'
 import { prodExposePlugin } from './prod/expose-production'
+import { federationTypesPlugin } from './prod/federation-types-plugin'
 import { devSharedPlugin } from './dev/shared-development'
 import { devRemotePlugin } from './dev/remote-development'
 import { devExposePlugin } from './dev/expose-development'
@@ -49,15 +50,17 @@ export default function federation(
       pluginList = [
         prodSharedPlugin(options),
         prodExposePlugin(options),
-        prodRemotePlugin(options)
+        prodRemotePlugin(options),
+        federationTypesPlugin(options)
       ]
     } else if (mode === 'development' || command === 'serve') {
       pluginList = [
         devSharedPlugin(options),
         devExposePlugin(options),
-        devRemotePlugin(options)
+        devRemotePlugin(options),
+        federationTypesPlugin(options)
       ]
-    }  else {
+    } else {
       pluginList = []
     }
     builderInfo.isHost = !!(
@@ -69,6 +72,11 @@ export default function federation(
     builderInfo.isShared = !!(
       parsedOptions.prodShared.length || parsedOptions.devShared.length
     )
+    builderInfo.isStorybook = process.env.npm_lifecycle_event == 'storybook'
+    if (builderInfo.isStorybook) {
+      builderInfo.isHost = true
+      builderInfo.isRemote = false
+    }
 
     let virtualFiles = {}
     pluginList.forEach((plugin) => {
@@ -115,6 +123,7 @@ export default function federation(
       // only run when builder is vite,rollup doesnt has hook named `config`
       builderInfo.builder = 'vite'
       builderInfo.assetsDir = config?.build?.assetsDir ?? 'assets'
+      builderInfo.outDir = config?.build?.outDir ?? 'build'
     },
     configureServer(server: ViteDevServer) {
       for (const pluginHook of pluginList) {
