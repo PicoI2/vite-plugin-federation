@@ -15,7 +15,7 @@
 
 import type { PluginHooks } from '../../types/pluginHooks'
 import { NAME_CHAR_REG, parseSharedOptions, removeNonRegLetter } from '../utils'
-import { builderInfo, parsedOptions } from '../public'
+import { parsedOptions } from '../public'
 import type { ConfigTypeSet, VitePluginFederationOptions } from 'types'
 import { walk } from 'estree-walker'
 import MagicString from 'magic-string'
@@ -53,7 +53,7 @@ export function prodSharedPlugin(
     const ast = this.parse(code)
     const magicString = new MagicString(code)
     let importSharedRequired = false
-    let importSharedFound = false
+    let importSharedSpecifierAlias = ''
     let modified = false
 
     walk(ast, {
@@ -65,7 +65,14 @@ export function prodSharedPlugin(
               (specify) => specify.imported?.name === 'importShared'
             )
           ) {
-            importSharedFound = true
+            magicString.remove(node.start, node.end)
+            if (node.specifiers?.length) {
+              node.specifiers.forEach((specifier) => {
+                if (specifier.local.name != 'importShared') {
+                  importSharedSpecifierAlias += `, ${specifier.imported.name} as ${specifier.local.name}`
+                }
+              })
+            }
           }
 
           const sharedName = getSharedName(node.source.value)
@@ -92,13 +99,25 @@ export function prodSharedPlugin(
               })
             }
             if (declaration.length) {
-              magicString.overwrite(
-                node.start,
-                node.end,
-                `const {${declaration.join(
-                  ','
-                )}} = await importShared('${sharedName}');\n`
-              )
+              if (
+                sharedName == 'react' &&
+                declaration.length == 1 &&
+                node.specifiers[0].imported.name == 'r'
+              ) {
+                magicString.overwrite(
+                  node.start,
+                  node.end,
+                  `const {r:${node.specifiers[0].local.name} = await importShared('react') } = await importShared('react');\n`
+                )
+              } else {
+                magicString.overwrite(
+                  node.start,
+                  node.end,
+                  `const {${declaration.join(
+                    ','
+                  )}} = await importShared('${sharedName}');\n`
+                )
+              }
               importSharedRequired = true
               modified = true
             }
@@ -106,13 +125,11 @@ export function prodSharedPlugin(
         }
       }
     })
-    if (importSharedRequired && !importSharedFound) {
-      const federationFnImportPath = this.getFileName(
-        federation_fn_import_id
-      ).replace(builderInfo.assetsDir, '.')
-
+    if (importSharedRequired) {
       magicString.prepend(
-        `import {importShared} from '${federationFnImportPath}';\n`
+        `import {importShared ${importSharedSpecifierAlias}} from './${this.getFileName(
+          federation_fn_import_id
+        )}';\n`
       )
     }
     if (modified) {
@@ -285,7 +302,8 @@ export function prodSharedPlugin(
             const sharedName = getSharedName(chunk.fileName)
             if (
               sharedName &&
-              shareName2Prop.get(sharedName)?.generate === false
+              shareName2Prop.get(removeNonRegLetter(sharedName, NAME_CHAR_REG))
+                ?.generate === false
             ) {
               needRemoveShared.add(key)
               continue

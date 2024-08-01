@@ -54,7 +54,7 @@ function flattenModule(module, name) {
       }
     })
   } else if (module.default) {
-    module = Object.assign({}, module.default, module)
+    module = Object.assign(module.default, module)
   } else {
     module = Object.assign({ default: module }, module)
   }
