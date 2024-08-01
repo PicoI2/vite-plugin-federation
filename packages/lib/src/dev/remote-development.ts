@@ -175,18 +175,24 @@ export {__federation_method_ensure, __federation_method_getRemote , __federation
       if (builderInfo.isHost && !builderInfo.isRemote) {
         for (const arr of parsedOptions.devShared) {
           if (!arr[1].version && !arr[1].manuallyPackagePathSetting) {
-            const packageJsonPath = (
-              await this.resolve(`${arr[0]}/package.json`)
-            )?.id
-            if (!packageJsonPath) {
-              this.error(
-                `No description file or no version in description file (usually package.json) of ${arr[0]}(${packageJsonPath}). Add version to description file, or manually specify version in shared config.`
-              )
-            } else {
-              const json = JSON.parse(
-                readFileSync(packageJsonPath, { encoding: 'utf-8' })
-              )
-              arr[1].version = json.version
+            try {
+              const packageJsonPath = (
+                await this.resolve(`${arr[0]}/package.json`)
+              )?.id
+              if (!packageJsonPath) {
+                if (!builderInfo.isStorybook) {
+                  this.error(
+                    `No description file or no version in description file (usually package.json) of ${arr[0]}(${packageJsonPath}). Add version to description file, or manually specify version in shared config.`
+                  )
+                }
+              } else {
+                const json = JSON.parse(
+                  readFileSync(packageJsonPath, { encoding: 'utf-8' })
+                )
+                arr[1].version = json.version
+              }
+            } catch {
+              arr[1].version = 'any'
             }
           }
         }

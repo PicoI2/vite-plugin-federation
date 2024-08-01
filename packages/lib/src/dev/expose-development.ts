@@ -21,6 +21,9 @@ import type { PluginHooks } from '../../types/pluginHooks'
 export function devExposePlugin(
   options: VitePluginFederationOptions
 ): PluginHooks {
+  parsedOptions.devExpose = builderInfo.isStorybook
+    ? []
+    : parseExposeOptions(options)
   parsedOptions.devExpose = parseExposeOptions(options)
 
   return {

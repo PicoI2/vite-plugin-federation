@@ -69,6 +69,11 @@ export default function federation(
     builderInfo.isShared = !!(
       parsedOptions.prodShared.length || parsedOptions.devShared.length
     )
+    builderInfo.isStorybook = process.env.npm_lifecycle_event == 'storybook'
+    if (builderInfo.isStorybook) {
+      builderInfo.isHost = true
+      builderInfo.isRemote = false
+    }
 
     let virtualFiles = {}
     pluginList.forEach((plugin) => {
