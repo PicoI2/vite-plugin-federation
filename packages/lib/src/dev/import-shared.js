@@ -23,7 +23,7 @@ export const importShared = function () {
         moduleCache[name] = module.default
         return module.default
       }
-      if (module.default) module = Object.assign({}, module.default, module)
+      if (module.default) module = Object.assign(module.default, module)
       moduleCache[name] = module
       return module
     }

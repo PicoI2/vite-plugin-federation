@@ -215,6 +215,25 @@ export {__federation_method_ensure, __federation_method_getRemote , __federation
       }
 
       code += `(${importShared})();\n`
+      if (builderInfo.isRemote) {
+        if (
+          parsedOptions.devShared.some(
+            (sharedInfo) => 'react' == sharedInfo[0]
+          ) &&
+          code.includes('module.exports = require_react_development();') &&
+          /\n\/\/.*\/node_modules\/react\/index.js\n/.test(code)
+        ) {
+          //   console.log('Fix import of react in ', id);
+          code = code.replace(
+            /\/\/.*\/node_modules\/react\/index.js/,
+            "import React from 'react'; // fix react import in dev mode"
+          )
+          code = code.replace(
+            'module.exports = require_react_development();',
+            'module.exports = React; // fix react import in dev mode'
+          )
+        }
+      }
 
       let ast: AcornNode | null = null
       try {
@@ -484,7 +503,10 @@ export {__federation_method_ensure, __federation_method_getRemote , __federation
         let str = ''
         if (typeof obj === 'object') {
           const origin = serverConfiguration.origin
-          const pathname = relativePath ?? `/@fs/${moduleInfo.id}`
+          let pathname = relativePath ?? `/@fs/${moduleInfo.id}`
+          if (sharedName === '/@react-refresh') {
+            pathname = sharedName
+          }
           const url = origin
             ? `'${origin}${pathname}'`
             : `window.location.origin+'${pathname}'`
